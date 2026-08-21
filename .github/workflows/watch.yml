@@ -17,9 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -41,7 +41,7 @@ jobs:
         run: |
           git config user.name  "tibo-watcher-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add watcher_state.json
+          git add -f watcher_state.json
           if git diff --cached --quiet; then
             echo "state unchanged, nothing to commit"
           else

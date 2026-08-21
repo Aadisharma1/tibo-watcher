@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import html as html_utils
 import re
 
@@ -32,13 +31,11 @@ def fetch_x_posts(cfg: Config) -> list[Post]:
     return posts
 
 
-_ENTRY_RE = re.compile(
-    r"<time[^>]*>\s*([^<]+?)\s*</time>"
-    r".*?<h[1-4][^>]*>(.*?)</h[1-4]>"
-    r".*?<article\b.*?</article>",
-    re.S,
-)
-_TAG_RE = re.compile(r"<[^>]+>")
+_LI_ID_RE = re.compile(r'<li id="([^"]+)"')
+_TIME_RE = re.compile(r"<time[^>]*>\s*([^<]+?)\s*</time>")
+_HEADING_RE = re.compile(r"<h[1-4][^>]*>(.*?)</h[1-4]>", re.S)
+_ARTICLE_RE = re.compile(r"<article\b")
+_TAG_RE = re.compile(r"""<(?:[^>"']|"[^"]*"|'[^']*')*>""")
 _MAX_ENTRIES = 40
 
 
@@ -49,16 +46,27 @@ def _plain_text(fragment: str) -> str:
 
 def fetch_changelog_entries(cfg: Config) -> list[Post]:
     page = http_get(cfg.changelog_url)
+    marks = list(_LI_ID_RE.finditer(page))
     entries: list[Post] = []
-    for match in list(_ENTRY_RE.finditer(page))[:_MAX_ENTRIES]:
-        date = _plain_text(match.group(1))
-        title = _plain_text(match.group(2)) or "Changelog update"
-        body = _plain_text(match.group(0)[match.group(0).find("<article"):])
+    spans = []
+    for index, mark in enumerate(marks):
+        end = marks[index + 1].start() if index + 1 < len(marks) else len(page)
+        spans.append((mark.group(1), page[mark.start():end]))
+    for li_id, span in spans:
+        if _ARTICLE_RE.search(span) is None or len(entries) >= _MAX_ENTRIES:
+            continue
+        time_match = _TIME_RE.search(span)
+        heading_match = _HEADING_RE.search(span)
+        article_match = _ARTICLE_RE.search(span)
+        body_html = span[article_match.start():span.find("</article>",
+                                                        article_match.start())]
+        date = _plain_text(time_match.group(1)) if time_match else ""
+        title = _plain_text(heading_match.group(1)) if heading_match else "Changelog update"
+        body = _plain_text(body_html)
         if not body:
             continue
-        fingerprint = hashlib.sha1(body[:240].casefold().encode()).hexdigest()
         entries.append(Post(
-            key=f"changelog:{fingerprint[:24]}",
+            key=f"changelog:{li_id}",
             source="changelog",
             title=title,
             body=body,

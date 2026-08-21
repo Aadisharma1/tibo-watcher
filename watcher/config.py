@@ -24,6 +24,16 @@ def _flag(name: str, default: str) -> bool:
     return os.environ.get(name, default).strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _int_env(name: str, default: int) -> int:
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
+
+
 @dataclass
 class Config:
     handle: str = "thsottiaux"
@@ -66,19 +76,19 @@ def load_config(**overrides) -> Config:
     _load_dotenv(PROJECT_ROOT / ".env")
     env = os.environ.get
     cfg = Config(
-        handle=env("TIBO_HANDLE", Config.handle).lstrip("@"),
+        handle=(env("TIBO_HANDLE", "") or Config.handle).lstrip("@"),
         include_replies=_flag("INCLUDE_REPLIES", "1"),
         watch_changelog=_flag("WATCH_CHANGELOG", "1"),
-        interval_min=max(1, int(env("WATCH_INTERVAL_MIN", "10"))),
-        score_threshold=int(env("SCORE_THRESHOLD", "3")),
+        interval_min=max(1, _int_env("WATCH_INTERVAL_MIN", 10)),
+        score_threshold=_int_env("SCORE_THRESHOLD", 3),
         alert_all=_flag("ALERT_ALL", "0"),
-        state_file=Path(env("STATE_FILE", str(Config.state_file))),
-        ntfy_server=env("NTFY_SERVER", Config.ntfy_server),
+        state_file=Path(env("STATE_FILE", "") or str(Config.state_file)),
+        ntfy_server=env("NTFY_SERVER", Config.ntfy_server) or Config.ntfy_server,
         ntfy_topic=env("NTFY_TOPIC", "").strip(),
         telegram_token=env("TELEGRAM_BOT_TOKEN", "").strip(),
         telegram_chat_id=env("TELEGRAM_CHAT_ID", "").strip(),
         smtp_host=env("SMTP_HOST", "").strip(),
-        smtp_port=int(env("SMTP_PORT", "587")),
+        smtp_port=_int_env("SMTP_PORT", 587),
         smtp_user=env("SMTP_USER", "").strip(),
         smtp_password=env("SMTP_PASSWORD", "").strip(),
         mail_from=env("MAIL_FROM", env("SMTP_USER", "")).strip(),
