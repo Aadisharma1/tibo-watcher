@@ -133,7 +133,8 @@
   "changelog:codex-2026-09-05": "2026-09-11T13:35:06+00:00",
   "changelog:codex-2026-09-11-app": "2026-09-11T21:53:23+00:00",
   "changelog:codex-2026-09-14-gpt-55-retirement": "2026-09-15T21:42:34+00:00",
-  "changelog:github-release-391114314": "2026-09-17T23:46:39+00:00"
+  "changelog:github-release-391114314": "2026-09-17T23:46:39+00:00",
+  "changelog:codex-2026-09-14-codex-spark-deprecation": "2026-09-18T06:34:07+00:00"
  },
- "last_run": "2026-09-18T01:33:57+00:00"
+ "last_run": "2026-09-18T06:34:07+00:00"
 }
